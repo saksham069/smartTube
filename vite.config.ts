@@ -9,11 +9,12 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, "popup/index.html"),
         content: resolve(__dirname, "src/content.tsx"),
+        "content-style": resolve(__dirname, "popup/index.css"),
       },
       output: {
         entryFileNames: "[name].js",
-        chunkFileNames: "[name].js",
-        assetFileNames: "[name].[ext]",
+        chunkFileNames: "chunks/[name].js",
+        assetFileNames: "assets/[name].[ext]",
       },
     },
     outDir: "dist",

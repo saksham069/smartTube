@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom/client";
 import WritePad from "./components/writePad";
+import "../popup/index.css";
 
 function mountWritePad() {
   const existing = document.getElementById("smarttube-overlay-container");
