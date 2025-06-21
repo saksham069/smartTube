@@ -1,3 +1,112 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
+
+body {
+  font-family: "Inter", sans-serif;
+}
+
+/* overlay */
+.smarttube-overlay {
+  position: fixed;
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 80%;
+  z-index: 9999;
+  border-radius: 1rem;
+  border: 1px solid #ddd;
+  background-color: #fbfbfa;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  overflow: visible;
+  transition: background-color 0.2s ease;
+}
+
+.smarttube-overlay.dark {
+  background-color: #1e1f24;
+  color: #fff;
+  border-color: #333;
+}
+
+/* header */
+.smarttube-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.smarttube-overlay.dark .smarttube-header {
+  border-color: #444;
+}
+
+.smarttube-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.smarttube-toggle {
+  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.smarttube-overlay.dark .smarttube-toggle {
+  background-color: #333;
+  border-color: #666;
+  color: #fff;
+}
+
+/* editor */
+.smarttube-editor-container {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.smarttube-editor {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  outline: none;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1.8;
+  color: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.smarttube-editor::placeholder {
+  color: #aaa;
+}
+
+.smarttube-overlay.dark .smarttube-editor::placeholder {
+  color: #666;
+}
+
+/* smooth scrollbar */
+.smarttube-editor-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.smarttube-editor-container::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.smarttube-overlay.dark .smarttube-editor-container::-webkit-scrollbar-thumb {
+  background: #555;
+}
