@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "SmartTube",
+  "version": "1.0",
+  "description": "Take timestamped notes, summaries, and share insights on YouTube videos.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "host_permissions": ["https://www.youtube.com/*"]
+}
