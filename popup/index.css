@@ -110,3 +110,29 @@ body {
 .smarttube-overlay.dark .smarttube-editor-container::-webkit-scrollbar-thumb {
   background: #555;
 }
+
+/* notes icon styling */
+.ytp-right-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#smarttube-note-button {
+  padding: 6px 0 0 15px;
+  margin: 0;
+  width: 48px;
+  height: 48px;
+}
+
+#smarttube-note-button svg {
+  width: 24px;
+  height: 24px;
+  fill: white;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+#smarttube-note-button:hover svg {
+  opacity: 1;
+}

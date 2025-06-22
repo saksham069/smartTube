@@ -2,6 +2,17 @@ import ReactDOM from "react-dom/client";
 import WritePad from "./components/writePad";
 import "../popup/index.css";
 
+// if gonna change svg, fix styling in index.css
+const iconSVG = `
+  <svg viewBox="0 0 24 24" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"
+          fill="#fff"/>
+    <path d="M20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83
+             3.75 3.75 1.84-1.82z"
+          fill="#fff"/>
+  </svg>
+`;
+
 function mountWritePad() {
   const existing = document.getElementById("smarttube-overlay-container");
   if (existing) {
@@ -20,26 +31,21 @@ function mountWritePad() {
 function injectNoteIcon() {
   if (document.getElementById("smarttube-note-button")) return;
 
+  const controlBar = document.querySelector(".ytp-right-controls");
+  if (!controlBar) {
+    setTimeout(injectNoteIcon, 500);
+    return;
+  }
+
   const btn = document.createElement("button");
   btn.id = "smarttube-note-button";
-  btn.innerHTML = "📝";
-  btn.title = "Take Notes with SmartTube";
-
-  Object.assign(btn.style, {
-    position: "absolute",
-    bottom: "90px",
-    right: "20px",
-    zIndex: "99999",
-    fontSize: "20px",
-    padding: "8px",
-    borderRadius: "50%",
-    border: "none",
-    backgroundColor: "#fff",
-    cursor: "pointer",
-  });
+  btn.className = "ytp-button";
+  btn.title = "SmartTube Notes";
+  btn.innerHTML = iconSVG;
 
   btn.onclick = mountWritePad;
-  document.body.appendChild(btn);
+
+  controlBar.insertBefore(btn, controlBar.firstChild);
 }
 
 injectNoteIcon();
