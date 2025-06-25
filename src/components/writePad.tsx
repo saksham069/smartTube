@@ -35,8 +35,18 @@ const WritePad = () => {
     merged.sort((a, b) => a.timestamp - b.timestamp);
     setTimedNotes(merged);
 
+    // scroll focus
     setTimeout(() => {
-      // const newIdx = merged.findIndex((n) => n.timestamp === timestamp);
+      const el = document.querySelector(
+        `#note-${timestamp} > .smarttube-editor`
+      ) as HTMLTextAreaElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.focus();
+      }
+    }, 100);
+
+    setTimeout(() => {
       const el = document.getElementById(`note-${timestamp}`);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
@@ -61,7 +71,10 @@ const WritePad = () => {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (videoId) NotesService.saveUntimed(videoId, note);
+      if (videoId) {
+        const trimmed = note.trim();
+        NotesService.saveUntimed(videoId, trimmed);
+      }
     }, 500);
     return () => clearTimeout(timeout);
   }, [note]);
@@ -147,7 +160,12 @@ const WritePad = () => {
             onChange={(e) => setNote(e.target.value)}
             placeholder="Untimed notes..."
             className="smarttube-editor"
-            style={{ minHeight: "4rem" }}
+            style={{
+              minHeight: "4rem",
+              flexShrink: 0,
+              zIndex: 1,
+              position: "relative",
+            }}
           />
 
           {/* timed blocks */}
@@ -161,12 +179,15 @@ const WritePad = () => {
                 {formatTime(block.timestamp)}
               </div>
               <textarea
+                ref={(ref) => {
+                  textareaRef.current = ref;
+                  autoResize(ref);
+                }}
                 className="smarttube-editor timed"
                 placeholder="Write note..."
                 value={block.text}
                 onChange={(e) => {
                   handleTimedChange(idx, e.target.value);
-                  autoResize(e.target);
                 }}
               />
             </div>
