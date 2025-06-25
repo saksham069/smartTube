@@ -4,7 +4,16 @@ body {
   font-family: "Inter", sans-serif;
 }
 
-/* overlay */
+/* Prevent horizontal scroll at all levels */
+.smarttube-overlay,
+.smarttube-editor-container,
+.smarttube-editor,
+.smarttube-timed-block {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* overlay container */
 .smarttube-overlay {
   position: fixed;
   top: 10%;
@@ -19,7 +28,7 @@ body {
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  overflow: visible;
+  overflow: hidden;
   transition: background-color 0.2s ease;
 }
 
@@ -36,6 +45,7 @@ body {
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
 }
 
 .smarttube-overlay.dark .smarttube-header {
@@ -43,9 +53,9 @@ body {
 }
 
 .smarttube-title {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
-  margin: 0;
+  margin: 10px;
 }
 
 .smarttube-toggle {
@@ -64,40 +74,78 @@ body {
   color: #fff;
 }
 
-/* editor */
+/* editor container */
 .smarttube-editor-container {
-  flex: 1;
+  flex-grow: 1;
+  overflow-y: auto;
   padding: 1rem 1.5rem;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 1.25rem;
 }
 
+/* textarea styling */
 .smarttube-editor {
-  flex: 1;
-  width: 100%;
-  resize: none;
-  outline: none;
+  width: 98%;
+  font-size: 1.5rem;
+  line-height: 1.7;
+  background-color: #f1f1f1;
+  color: #000;
   border: none;
-  background: transparent;
-  font-size: 22px;
-  line-height: 1.8;
-  color: inherit;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-y: auto;
-  padding-right: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: background-color 0.2s ease;
 }
 
 .smarttube-editor::placeholder {
-  color: #aaa;
+  color: #999;
+}
+
+.smarttube-overlay.dark .smarttube-editor {
+  background-color: #2b2c31;
+  color: #fff;
 }
 
 .smarttube-overlay.dark .smarttube-editor::placeholder {
-  color: #666;
+  color: #777;
 }
 
-/* smooth scrollbar */
+/* timed block container */
+.smarttube-timed-block {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: #fdfdfd;
+  border: 1px solid #e2e2e2;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  overflow: visible;
+}
+
+.smarttube-overlay.dark .smarttube-timed-block {
+  background-color: #2a2b30;
+  border-color: #444;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* timestamp */
+.smarttube-timestamp {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #777;
+  margin-bottom: 0.5rem;
+}
+
+.smarttube-overlay.dark .smarttube-timestamp {
+  color: #bbb;
+}
+
+/* scrollbar */
 .smarttube-editor-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -111,7 +159,7 @@ body {
   background: #555;
 }
 
-/* notes icon styling */
+/* icon button */
 .ytp-right-controls {
   display: flex;
   align-items: center;
