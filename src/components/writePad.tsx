@@ -17,6 +17,21 @@ const WritePad = () => {
     };
   }, []);
 
+  // esc closes overlay
+  useEffect(() => {
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        document.getElementById("smarttube-overlay-container")?.remove();
+      }
+    };
+    window.addEventListener("keydown", escHandler);
+    return () => window.removeEventListener("keydown", escHandler);
+  }, []);
+
+  const dismiss = () => {
+    document.getElementById("smarttube-overlay-container")?.remove();
+  };
+
   const toggleTheme = () => {
     const newTheme = dark ? "light" : "dark";
     setDark(!dark);
@@ -24,23 +39,38 @@ const WritePad = () => {
   };
 
   return (
-    <div
-      className={`smarttube-overlay ${dark ? "dark" : ""}`}
-      id="smarttube-overlay"
-    >
-      <div className="smarttube-header">
-        <h1 className="smarttube-title">SmartTube Notes</h1>
-        <button onClick={toggleTheme} className="smarttube-toggle">
-          {dark ? "Light" : "Dark"} Mode
-        </button>
-      </div>
+    <div>
+      {/* backdrop div */}
+      <div
+        onClick={dismiss}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9998,
+          background: "transparent",
+        }}
+      ></div>
 
-      <div className="smarttube-editor-container">
-        <textarea
-          ref={textareaRef}
-          placeholder="Start writing your genius..."
-          className="smarttube-editor"
-        />
+      {/* notes overlay */}
+      <div
+        className={`smarttube-overlay ${dark ? "dark" : ""}`}
+        id="smarttube-overlay"
+        onClick={(e) => e.stopPropagation()} // prevent dismissal on clicking inside
+      >
+        <div className="smarttube-header">
+          <h1 className="smarttube-title">SmartTube Notes</h1>
+          <button onClick={toggleTheme} className="smarttube-toggle">
+            {dark ? "Light" : "Dark"} Mode
+          </button>
+        </div>
+
+        <div className="smarttube-editor-container">
+          <textarea
+            ref={textareaRef}
+            placeholder="Start writing your genius..."
+            className="smarttube-editor"
+          />
+        </div>
       </div>
     </div>
   );
