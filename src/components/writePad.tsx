@@ -90,14 +90,17 @@ const WritePad = () => {
     (handleTimedChange as any)._timeout = setTimeout(() => {
       const trimmed = text.trim();
       if (trimmed === "") {
-        NotesService.updateTimedNote(videoId, note.timestamp, "");
-        setTimedNotes(
-          updatedNotes.filter((n) => n.timestamp !== note.timestamp)
-        );
+        NotesService.updateTimedNote(videoId, note.timestamp, trimmed);
       } else {
         NotesService.updateTimedNote(videoId, note.timestamp, trimmed);
       }
     }, 500);
+  };
+
+  const handleDeleteTimed = (timestamp: number) => {
+    if (!videoId) return;
+    NotesService.updateTimedNote(videoId, timestamp, "");
+    setTimedNotes((prev) => prev.filter((n) => n.timestamp !== timestamp));
   };
 
   const toggleTheme = () => {
@@ -107,6 +110,14 @@ const WritePad = () => {
   };
 
   const dismiss = () => {
+    if (videoId) {
+      const cleaned = timedNotes.filter((n) => n.text.trim() !== "");
+      setTimedNotes(cleaned);
+      cleaned.forEach((n) =>
+        NotesService.updateTimedNote(videoId, n.timestamp, n.text.trim())
+      );
+    }
+
     document.getElementById("smarttube-overlay-container")?.remove();
   };
 
@@ -146,6 +157,7 @@ const WritePad = () => {
               idx={idx}
               formatTime={formatTime}
               handleChange={handleTimedChange}
+              handleDelete={handleDeleteTimed}
               autoResize={autoResize}
             />
           ))}
