@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import NotesService, { type TimedNote } from "../lib/notesService";
+import UntimedNote from "./UntimedNote";
+import TimedNoteBlock from "./TimedNote";
 
 const WritePad = () => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [dark, setDark] = useState(false);
   const [note, setNote] = useState("");
   const [timedNotes, setTimedNotes] = useState<TimedNote[]>([]);
@@ -16,8 +17,6 @@ const WritePad = () => {
   };
 
   useEffect(() => {
-    textareaRef.current?.focus();
-
     const savedTheme = localStorage.getItem("smarttube-theme");
     if (savedTheme === "dark") setDark(true);
 
@@ -26,7 +25,6 @@ const WritePad = () => {
     setNote(NotesService.getUntimed(videoId));
 
     const saved = NotesService.getAll()[videoId]?.timed || [];
-
     const player = document.querySelector("video") as HTMLVideoElement | null;
     const timestamp = player ? Math.floor(player.currentTime) : 0;
 
@@ -35,7 +33,6 @@ const WritePad = () => {
     merged.sort((a, b) => a.timestamp - b.timestamp);
     setTimedNotes(merged);
 
-    // scroll focus
     setTimeout(() => {
       const el = document.querySelector(
         `#note-${timestamp} > .smarttube-editor`
@@ -44,11 +41,6 @@ const WritePad = () => {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.focus();
       }
-    }, 100);
-
-    setTimeout(() => {
-      const el = document.getElementById(`note-${timestamp}`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
   }, []);
 
@@ -72,8 +64,7 @@ const WritePad = () => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (videoId) {
-        const trimmed = note.trim();
-        NotesService.saveUntimed(videoId, trimmed);
+        NotesService.saveUntimed(videoId, note.trim());
       }
     }, 500);
     return () => clearTimeout(timeout);
@@ -90,7 +81,6 @@ const WritePad = () => {
   const handleTimedChange = (index: number, text: string) => {
     const updatedNotes = [...timedNotes];
     const note = updatedNotes[index];
-
     if (!videoId) return;
 
     note.text = text;
@@ -99,14 +89,11 @@ const WritePad = () => {
     clearTimeout((handleTimedChange as any)._timeout);
     (handleTimedChange as any)._timeout = setTimeout(() => {
       const trimmed = text.trim();
-
       if (trimmed === "") {
         NotesService.updateTimedNote(videoId, note.timestamp, "");
-        // removes from UI if empty; change later ***
-        const filtered = updatedNotes.filter(
-          (n) => n.timestamp !== note.timestamp
+        setTimedNotes(
+          updatedNotes.filter((n) => n.timestamp !== note.timestamp)
         );
-        setTimedNotes(filtered);
       } else {
         NotesService.updateTimedNote(videoId, note.timestamp, trimmed);
       }
@@ -150,47 +137,17 @@ const WritePad = () => {
         </div>
 
         <div className="smarttube-editor-container">
-          {/* untimed */}
-          <textarea
-            ref={(ref) => {
-              textareaRef.current = ref;
-              autoResize(ref);
-            }}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Untimed notes..."
-            className="smarttube-editor"
-            style={{
-              minHeight: "4rem",
-              flexShrink: 0,
-              zIndex: 1,
-              position: "relative",
-            }}
-          />
-
-          {/* timed blocks */}
+          <UntimedNote note={note} setNote={setNote} autoResize={autoResize} />
           {timedNotes.map((block, idx) => (
-            <div
+            <TimedNoteBlock
               key={`${block.timestamp}-${idx}`}
-              className="smarttube-timed-block"
-              id={`note-${block.timestamp}`}
-            >
-              <div className="smarttube-timestamp">
-                {formatTime(block.timestamp)}
-              </div>
-              <textarea
-                ref={(ref) => {
-                  textareaRef.current = ref;
-                  autoResize(ref);
-                }}
-                className="smarttube-editor timed"
-                placeholder="Write note..."
-                value={block.text}
-                onChange={(e) => {
-                  handleTimedChange(idx, e.target.value);
-                }}
-              />
-            </div>
+              text={block.text}
+              timestamp={block.timestamp}
+              idx={idx}
+              formatTime={formatTime}
+              handleChange={handleTimedChange}
+              autoResize={autoResize}
+            />
           ))}
         </div>
       </div>
