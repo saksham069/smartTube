@@ -27,14 +27,8 @@ const UntimedNote = ({ note, setNote, autoResize }: Props) => {
         setNote(e.target.value);
         autoResize(e.target);
       }}
-      placeholder="Untimed notes..."
-      className="smarttube-editor"
-      style={{
-        minHeight: "4rem",
-        flexShrink: 0,
-        zIndex: 1,
-        position: "relative",
-      }}
+      placeholder="General notes for this video..."
+      className="w-full text-xl font-normal leading-relaxed text-zinc-800 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-300 dark:border-zinc-700 rounded-xl px-6 py-5 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow"
     />
   );
 };

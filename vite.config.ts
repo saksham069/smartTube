@@ -2,22 +2,31 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
-export default defineConfig({
-  plugins: [react()],
-  build: {
-    rollupOptions: {
-      input: {
-        popup: resolve(__dirname, "popup/index.html"),
-        content: resolve(__dirname, "src/content.tsx"),
-        "content-style": resolve(__dirname, "popup/index.css"),
+export default defineConfig(({ mode }) => {
+  const isContentScript = mode === "content";
+  
+  return {
+    plugins: [react()],
+    build: {
+      rollupOptions: {
+        input: isContentScript 
+          ? resolve(__dirname, "src/content.tsx")
+          : resolve(__dirname, "popup/index.html"),
+        output: {
+          entryFileNames: isContentScript ? "content.js" : "assets/[name].js",
+          chunkFileNames: "assets/[name].js",
+          assetFileNames: "assets/[name].[ext]",
+          format: isContentScript ? "iife" : "es",
+        },
       },
-      output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "chunks/[name].js",
-        assetFileNames: "assets/[name].[ext]",
-      },
+      outDir: "dist",
+      emptyOutDir: !isContentScript, // Don't empty when building content script
+      target: "es2020",
+      minify: true,
+      sourcemap: false,
     },
-    outDir: "dist",
-    emptyOutDir: true,
-  },
+    define: {
+      "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development"),
+    },
+  };
 });

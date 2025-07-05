@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:popup": "tsc -b && vite build",
-    "build:content": "tsc -b && vite build --config vite.config.content.ts",
+    "dev:content": "vite build --mode content --watch",
     "build": "npm run build:popup && npm run build:content",
+    "build:popup": "vite build",
+    "build:content": "vite build --mode content",
     "lint": "eslint .",
     "preview": "vite preview"
   },

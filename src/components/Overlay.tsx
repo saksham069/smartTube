@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import NotesService, { type TimedNote } from "../lib/notesService";
+import NotesService, { type ITimedNote } from "../lib/notesService";
 import UntimedNote from "./UntimedNote";
 import TimedNoteBlock from "./TimedNote";
 
-const WritePad = () => {
-  const [dark, setDark] = useState(false);
+const Overlay = () => {
   const [note, setNote] = useState("");
-  const [timedNotes, setTimedNotes] = useState<TimedNote[]>([]);
+  const [timedNotes, setTimedNotes] = useState<ITimedNote[]>([]);
 
   const videoId = NotesService.getVideoId();
 
@@ -17,17 +16,22 @@ const WritePad = () => {
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("smarttube-theme");
-    if (savedTheme === "dark") setDark(true);
+    const isDark = localStorage.getItem("smarttube-theme") === "true";
+    const shouldPause = localStorage.getItem("smarttube-pause") === "true";
+
+    document.documentElement.classList.toggle("dark", isDark);
 
     if (!videoId) return;
 
-    setNote(NotesService.getUntimed(videoId));
-
-    const saved = NotesService.getAll()[videoId]?.timed || [];
     const player = document.querySelector("video") as HTMLVideoElement | null;
-    const timestamp = player ? Math.floor(player.currentTime) : 0;
+    if (shouldPause && player) {
+      setTimeout(() => player.pause(), 100);
+    }
 
+    setNote(NotesService.getUntimed(videoId));
+    const saved = NotesService.getAll()[videoId]?.timed || [];
+
+    const timestamp = player ? Math.floor(player.currentTime) : 0;
     const exists = saved.find((n) => n.timestamp === timestamp);
     const merged = exists ? saved : [...saved, { timestamp, text: "" }];
     merged.sort((a, b) => a.timestamp - b.timestamp);
@@ -35,7 +39,7 @@ const WritePad = () => {
 
     setTimeout(() => {
       const el = document.querySelector(
-        `#note-${timestamp} > .smarttube-editor`
+        `#note-${timestamp} textarea`
       ) as HTMLTextAreaElement | null;
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -48,6 +52,7 @@ const WritePad = () => {
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "auto";
+      document.documentElement.classList.remove("dark");
     };
   }, []);
 
@@ -70,30 +75,19 @@ const WritePad = () => {
     return () => clearTimeout(timeout);
   }, [note]);
 
-  const formatTime = (seconds: number) => {
-    const min = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const sec = (seconds % 60).toString().padStart(2, "0");
-    return `${min}:${sec}`;
-  };
-
   const handleTimedChange = (index: number, text: string) => {
-    const updatedNotes = [...timedNotes];
-    const note = updatedNotes[index];
     if (!videoId) return;
-
-    note.text = text;
+    const updatedNotes = [...timedNotes];
+    updatedNotes[index].text = text;
     setTimedNotes(updatedNotes);
 
     clearTimeout((handleTimedChange as any)._timeout);
     (handleTimedChange as any)._timeout = setTimeout(() => {
-      const trimmed = text.trim();
-      if (trimmed === "") {
-        NotesService.updateTimedNote(videoId, note.timestamp, trimmed);
-      } else {
-        NotesService.updateTimedNote(videoId, note.timestamp, trimmed);
-      }
+      NotesService.updateTimedNote(
+        videoId,
+        updatedNotes[index].timestamp,
+        text.trim()
+      );
     }, 500);
   };
 
@@ -103,51 +97,48 @@ const WritePad = () => {
     setTimedNotes((prev) => prev.filter((n) => n.timestamp !== timestamp));
   };
 
-  const toggleTheme = () => {
-    const newTheme = dark ? "light" : "dark";
-    setDark(!dark);
-    localStorage.setItem("smarttube-theme", newTheme);
-  };
-
   const dismiss = () => {
     if (videoId) {
       const cleaned = timedNotes.filter((n) => n.text.trim() !== "");
-      setTimedNotes(cleaned);
       cleaned.forEach((n) =>
         NotesService.updateTimedNote(videoId, n.timestamp, n.text.trim())
       );
     }
-
     document.getElementById("smarttube-overlay-container")?.remove();
   };
 
-  return (
-    <div>
-      {/* backdrop */}
-      <div
-        onClick={dismiss}
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 9998,
-          background: "transparent",
-        }}
-      ></div>
+  const backdropStyle = {
+    position: "fixed" as const,
+    inset: 0,
+    zIndex: 9998,
+    background:
+      localStorage.getItem("smarttube-blur") === "true"
+        ? "rgba(0, 0, 0, 0.4)"
+        : "transparent",
+    backdropFilter:
+      localStorage.getItem("smarttube-blur") === "true" ? "blur(6px)" : "none",
+    WebkitBackdropFilter:
+      localStorage.getItem("smarttube-blur") === "true" ? "blur(6px)" : "none",
+  };
 
-      {/* overlay */}
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+
+  return (
+    <>
+      <div onClick={dismiss} style={backdropStyle} />
       <div
-        className={`smarttube-overlay ${dark ? "dark" : ""}`}
+        className="fixed top-[5%] left-[5%] w-[90%] h-[90%] z-[9999] bg-white dark:bg-zinc-900 text-black dark:text-zinc-200 rounded-xl border border-zinc-300 dark:border-zinc-700 shadow-2xl flex flex-col overflow-hidden text-[15px] sm:text-base"
         id="smarttube-overlay"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="smarttube-header">
-          <h1 className="smarttube-title">SmartTube Notes</h1>
-          <button onClick={toggleTheme} className="smarttube-toggle">
-            {dark ? "Light" : "Dark"} Mode
-          </button>
+        <div className="px-6 py-4 border-b border-zinc-300 dark:border-zinc-700 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">SmartTube Notes</h1>
         </div>
 
-        <div className="smarttube-editor-container">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <UntimedNote note={note} setNote={setNote} autoResize={autoResize} />
           {timedNotes.map((block, idx) => (
             <TimedNoteBlock
@@ -163,8 +154,8 @@ const WritePad = () => {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default WritePad;
+export default Overlay;

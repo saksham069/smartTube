@@ -1,19 +1,19 @@
-export interface TimedNote {
+export interface ITimedNote {
   timestamp: number; // in seconds
   text: string;
 }
 
-export interface SmartTubeNotes {
+export interface ISmartTubeNotes {
   [videoId: string]: {
     untimed: string;
-    timed: TimedNote[];
+    timed: ITimedNote[];
   };
 }
 
 const STORAGE_KEY = "smarttube-notes";
 
 const NotesService = {
-  getAll(): SmartTubeNotes {
+  getAll(): ISmartTubeNotes {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : {};
@@ -22,7 +22,7 @@ const NotesService = {
     }
   },
 
-  saveAll(notes: SmartTubeNotes) {
+  saveAll(notes: ISmartTubeNotes) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   },
 
@@ -41,7 +41,7 @@ const NotesService = {
     this.saveAll(all);
   },
 
-  addTimedNote(videoId: string, note: TimedNote) {
+  addTimedNote(videoId: string, note: ITimedNote) {
     const all = this.getAll();
     all[videoId] ??= { untimed: "", timed: [] };
     all[videoId].timed.push(note);
@@ -68,6 +68,18 @@ const NotesService = {
     }
 
     this.saveAll(all);
+  },
+
+  importAll(data: Record<string, { untimed: string; timed: ITimedNote[] }>) {
+    try {
+      Object.keys(data).forEach((videoId) => {
+        const current = NotesService.getAll();
+        current[videoId] = data[videoId];
+        localStorage.setItem("smarttube-notes", JSON.stringify(current));
+      });
+    } catch (e) {
+      console.error("Import failed", e);
+    }
   },
 };
 

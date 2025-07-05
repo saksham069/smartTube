@@ -5,8 +5,12 @@ module.exports = {
     "./popup/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      spacing: {
+        80: "20rem",
+      },
+    },
+    darkMode: "class",
+    plugins: [],
   },
-  darkMode: "class",
-  plugins: [],
 };

@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom/client";
-import WritePad from "./components/writePad";
+import Overlay from "./components/Overlay";
 import "../popup/index.css";
 
 // if gonna change svg, fix styling in index.css
@@ -13,7 +13,7 @@ const iconSVG = `
   </svg>
 `;
 
-function mountWritePad() {
+function mountOverlay() {
   const existing = document.getElementById("smarttube-overlay-container");
   if (existing) {
     existing.remove();
@@ -25,7 +25,7 @@ function mountWritePad() {
   document.body.appendChild(container);
 
   const root = ReactDOM.createRoot(container);
-  root.render(<WritePad />);
+  root.render(<Overlay />);
 }
 
 function injectNoteIcon() {
@@ -43,9 +43,21 @@ function injectNoteIcon() {
   btn.title = "SmartTube Notes";
   btn.innerHTML = iconSVG;
 
-  btn.onclick = mountWritePad;
+  btn.onclick = mountOverlay;
 
   controlBar.insertBefore(btn, controlBar.firstChild);
 }
 
 injectNoteIcon();
+
+// toggle overlay on "n" key press (only when not typing)
+window.addEventListener("keydown", (e) => {
+  const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+  const editable = (e.target as HTMLElement)?.isContentEditable;
+  if (e.key === "n" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+    if (tag !== "input" && tag !== "textarea" && !editable) {
+      e.preventDefault();
+      mountOverlay();
+    }
+  }
+});
