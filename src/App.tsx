@@ -1,46 +1,67 @@
 import { useEffect, useState } from "react";
 import NotesService from "./lib/notesService";
 import Toggle from "./components/Toggle";
+import SettingsService from "./lib/settingsService";
 
 const App = () => {
   const [dark, setDark] = useState(false);
   const [blurBg, setBlurBg] = useState(false);
   const [pauseVideo, setPauseVideo] = useState(false);
 
+  // load settings from storage
   useEffect(() => {
-    const darkStored = localStorage.getItem("smarttube-theme") === "true";
-    const blurStored = localStorage.getItem("smarttube-blur") === "true";
-    const pauseStored = localStorage.getItem("smarttube-pause") === "true";
-
-    setDark(darkStored);
-    setBlurBg(blurStored);
-    setPauseVideo(pauseStored);
-
-    document.documentElement.classList.toggle("dark", darkStored);
+    console.log("mounting")
+    const settings = SettingsService.get();
+    setDark(settings.theme);
+    setBlurBg(settings.blur);
+    setPauseVideo(settings.pause);
+    document.documentElement.classList.remove("dark");
+    if (settings.theme) {
+      document.documentElement.classList.add("dark");
+    }
   }, []);
 
-  const updateSetting = (
-    key: string,
-    value: boolean,
-    setState: (val: boolean) => void
+  const handleSettingChange = (
+    key: "theme" | "blur" | "pause",
+    value: boolean
   ) => {
-    localStorage.setItem(key, value.toString());
-    setState(value);
-
-    if (key === "smarttube-theme") {
-      document.documentElement.classList.toggle("dark", value);
+    SettingsService.update(key, value);
+    if (key === "theme") {
+      document.documentElement.classList.remove("dark");
+      if (value) {
+        document.documentElement.classList.add("dark");
+      }
+      setDark(value);
+    } else if (key === "blur") {
+      setBlurBg(value);
+    } else if (key === "pause") {
+      setPauseVideo(value);
     }
   };
 
   const handleExport = () => {
-    const data = NotesService.getAll();
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
+    const videoId = NotesService.getVideoId();
+    if (!videoId) {
+      alert("No video ID found. Make sure you're on a YouTube video page.");
+      return;
+    }
+
+    const allNotes = NotesService.getAll();
+    const currentVideoNotes = allNotes[videoId];
+
+    if (!currentVideoNotes) {
+      alert("No notes found for this video.");
+      return;
+    }
+
+    const singleVideoData = { [videoId]: currentVideoNotes };
+    const blob = new Blob([JSON.stringify(singleVideoData, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "smarttube-notes.json";
+    a.download = `smarttube-notes-${videoId}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -48,9 +69,17 @@ const App = () => {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const text = await file.text();
     try {
       const data = JSON.parse(text);
+      const videoIds = Object.keys(data);
+
+      if (videoIds.length !== 1) {
+        alert("Invalid file format. File should contain notes for exactly one video.");
+        return;
+      }
+
       NotesService.importAll(data);
       alert("Notes imported!");
     } catch {
@@ -67,19 +96,17 @@ const App = () => {
         <Toggle
           label="Blur background on overlay"
           checked={blurBg}
-          onChange={(val) => updateSetting("smarttube-blur", val, setBlurBg)}
+          onChange={(val) => handleSettingChange("blur", val)}
         />
         <Toggle
           label="Pause video on overlay"
           checked={pauseVideo}
-          onChange={(val) =>
-            updateSetting("smarttube-pause", val, setPauseVideo)
-          }
+          onChange={(val) => handleSettingChange("pause", val)}
         />
         <Toggle
           label="Dark Mode"
           checked={dark}
-          onChange={(val) => updateSetting("smarttube-theme", val, setDark)}
+          onChange={(val) => handleSettingChange("theme", val)}
         />
       </div>
 

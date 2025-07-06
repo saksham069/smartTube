@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import NotesService, { type ITimedNote } from "../lib/notesService";
 import UntimedNote from "./UntimedNote";
 import TimedNoteBlock from "./TimedNote";
+import NotesService, { type ITimedNote } from "../lib/notesService";
+import SettingsService from "../lib/settingsService";
 
 const Overlay = () => {
   const [note, setNote] = useState("");
   const [timedNotes, setTimedNotes] = useState<ITimedNote[]>([]);
-
+  const [settings, setSettings] = useState(() => SettingsService.get());
   const videoId = NotesService.getVideoId();
 
   const autoResize = (el: HTMLTextAreaElement | null) => {
@@ -16,15 +17,30 @@ const Overlay = () => {
   };
 
   useEffect(() => {
-    const isDark = localStorage.getItem("smarttube-theme") === "true";
-    const shouldPause = localStorage.getItem("smarttube-pause") === "true";
+    const applyTheme = (theme: boolean) => {
+      document.documentElement.classList.remove("dark");
+      if (theme) document.documentElement.classList.add("dark");
+    };
 
-    document.documentElement.classList.toggle("dark", isDark);
+    applyTheme(settings.theme); // on mount
 
+    const onSettingsChange = (e: any) => {
+      const newSettings = e.detail;
+      setSettings(newSettings);
+      applyTheme(newSettings.theme); // on change
+    };
+
+    window.addEventListener("smarttube-settings-changed", onSettingsChange);
+    return () =>
+      window.removeEventListener("smarttube-settings-changed", onSettingsChange);
+  }, []);
+
+
+  useEffect(() => {
     if (!videoId) return;
 
     const player = document.querySelector("video") as HTMLVideoElement | null;
-    if (shouldPause && player) {
+    if (player && settings.pause) {
       setTimeout(() => player.pause(), 100);
     }
 
@@ -52,9 +68,9 @@ const Overlay = () => {
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "auto";
-      document.documentElement.classList.remove("dark");
     };
   }, []);
+
 
   useEffect(() => {
     const escHandler = (e: KeyboardEvent) => {
@@ -73,7 +89,7 @@ const Overlay = () => {
       }
     }, 500);
     return () => clearTimeout(timeout);
-  }, [note]);
+  }, [note, videoId]);
 
   const handleTimedChange = (index: number, text: string) => {
     if (!videoId) return;
@@ -104,33 +120,46 @@ const Overlay = () => {
         NotesService.updateTimedNote(videoId, n.timestamp, n.text.trim())
       );
     }
+
+    document.body.style.overflow = "auto";
+
+    // resume video 
+    const player = document.querySelector("video") as HTMLVideoElement | null;
+    if (player && settings.pause) {
+      player.play();
+    }
+
     document.getElementById("smarttube-overlay-container")?.remove();
   };
+
 
   const backdropStyle = {
     position: "fixed" as const,
     inset: 0,
     zIndex: 9998,
-    background:
-      localStorage.getItem("smarttube-blur") === "true"
-        ? "rgba(0, 0, 0, 0.4)"
-        : "transparent",
-    backdropFilter:
-      localStorage.getItem("smarttube-blur") === "true" ? "blur(6px)" : "none",
-    WebkitBackdropFilter:
-      localStorage.getItem("smarttube-blur") === "true" ? "blur(6px)" : "none",
+    background: settings.blur ? "rgba(0, 0, 0, 0.4)" : "transparent",
+    backdropFilter: settings.blur ? "blur(6px)" : "none",
+    WebkitBackdropFilter: settings.blur ? "blur(6px)" : "none",
   };
 
-  const formatTime = (s: number) =>
-    `${Math.floor(s / 60)
-      .toString()
-      .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
+  const formatTime = (s: number) => {
+    const hours = Math.floor(s / 3600);
+    const minutes = Math.floor((s % 3600) / 60);
+    const seconds = s % 60;
+
+    const pad = (n: number) => n.toString().padStart(2, "0");
+
+    return hours > 0
+      ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+      : `${pad(minutes)}:${pad(seconds)}`;
+  };
+
 
   return (
     <>
       <div onClick={dismiss} style={backdropStyle} />
       <div
-        className="fixed top-[5%] left-[5%] w-[90%] h-[90%] z-[9999] bg-white dark:bg-zinc-900 text-black dark:text-zinc-200 rounded-xl border border-zinc-300 dark:border-zinc-700 shadow-2xl flex flex-col overflow-hidden text-[15px] sm:text-base"
+        className="fixed top-[5%] left-[5%] w-[90%] h-[90%] z-[9999] bg-white dark:bg-zinc-900 text-black dark:text-zinc-200 rounded-xl border border-zinc-300 dark:border-zinc-700 shadow-2xl flex flex-col overflow-hidden text-[15px]"
         id="smarttube-overlay"
         onClick={(e) => e.stopPropagation()}
       >

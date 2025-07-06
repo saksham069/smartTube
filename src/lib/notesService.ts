@@ -83,4 +83,56 @@ const NotesService = {
   },
 };
 
+const SETTINGS_KEY = "smarttube-settings";
+
+type Settings = {
+  theme: boolean;
+  blur: boolean;
+  pause: boolean;
+};
+
+const defaultSettings: Settings = {
+  theme: false,
+  blur: false,
+  pause: false,
+};
+
+const SettingsService = {
+  initDefaults() {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
+    }
+  },
+
+  get(): Settings {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return defaultSettings;
+      }
+    }
+    return defaultSettings;
+  },
+
+  set(newSettings: Settings) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+    // Dispatch custom event for same-tab synchronization
+    window.dispatchEvent(
+      new CustomEvent("smarttube-settings-changed", {
+        detail: newSettings,
+      })
+    );
+  },
+
+  update<K extends keyof Settings>(key: K, value: boolean) {
+    const current = this.get();
+    current[key] = value;
+    this.set(current);
+    console.log(current);
+  },
+};
+
 export default NotesService;
