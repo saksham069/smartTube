@@ -12,12 +12,6 @@ const iconSVG = `
 `;
 
 function mountOverlay() {
-  const existing = document.getElementById("smarttube-overlay-container");
-  if (existing) {
-    existing.remove();
-    return;
-  }
-
   const container = document.createElement("div");
   container.id = "smarttube-overlay-container";
   document.body.appendChild(container);

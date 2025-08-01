@@ -32,29 +32,36 @@ const Overlay = () => {
     if (!videoId) return;
 
     const player = document.querySelector("video") as HTMLVideoElement | null;
-    if (player && settings.pause) {
+    if (player) {
       setTimeout(() => player.pause(), 100);
     }
 
-    setNote(NotesService.getUntimed(videoId));
-    const saved = NotesService.getAll()[videoId]?.timed || [];
+    const loadNotes = async () => {
+      const untimedNote = await NotesService.getUntimed(videoId);
+      setNote(untimedNote);
+      
+      const allNotes = await NotesService.getAll();
+      const saved = allNotes[videoId]?.timed || [];
 
-    const timestamp = player ? Math.floor(player.currentTime) : 0;
-    const exists = saved.find((n) => n.timestamp === timestamp);
-    const merged = exists ? saved : [...saved, { timestamp, text: "" }];
-    merged.sort((a, b) => a.timestamp - b.timestamp);
-    setTimedNotes(merged);
+      const timestamp = player ? Math.floor(player.currentTime) : 0;
+      const exists = saved.find((n) => n.timestamp === timestamp);
+      const merged = exists ? saved : [...saved, { timestamp, text: "" }];
+      merged.sort((a, b) => a.timestamp - b.timestamp);
+      setTimedNotes(merged);
 
-    setTimeout(() => {
-      const el = document.querySelector(
-        `#note-${timestamp} textarea`
-      ) as HTMLTextAreaElement | null;
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.focus();
-      }
-    }, 100);
-  }, []);
+      setTimeout(() => {
+        const el = document.querySelector(
+          `#note-${timestamp} textarea`
+        ) as HTMLTextAreaElement | null;
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.focus();
+        }
+      }, 100);
+    };
+
+    loadNotes();
+  }, [videoId]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -75,9 +82,9 @@ const Overlay = () => {
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const timeout = setTimeout(async () => {
       if (videoId) {
-        NotesService.saveUntimed(videoId, note.trim());
+        await NotesService.saveUntimed(videoId, note.trim());
       }
     }, 500);
     return () => clearTimeout(timeout);
@@ -90,8 +97,8 @@ const Overlay = () => {
     setTimedNotes(updatedNotes);
 
     clearTimeout((handleTimedChange as any)._timeout);
-    (handleTimedChange as any)._timeout = setTimeout(() => {
-      NotesService.updateTimedNote(
+    (handleTimedChange as any)._timeout = setTimeout(async () => {
+      await NotesService.updateTimedNote(
         videoId,
         updatedNotes[index].timestamp,
         text.trim()
@@ -99,28 +106,19 @@ const Overlay = () => {
     }, 500);
   };
 
-  const handleDeleteTimed = (timestamp: number) => {
+  const handleDeleteTimed = async (timestamp: number) => {
     if (!videoId) return;
-    NotesService.updateTimedNote(videoId, timestamp, "");
+    await NotesService.updateTimedNote(videoId, timestamp, "");
     setTimedNotes((prev) => prev.filter((n) => n.timestamp !== timestamp));
   };
 
-  const dismiss = () => {
+  const dismiss = async () => {
     if (videoId) {
       const cleaned = timedNotes.filter((n) => n.text.trim() !== "");
-      cleaned.forEach((n) =>
-        NotesService.updateTimedNote(videoId, n.timestamp, n.text.trim())
-      );
+      for (const n of cleaned) {
+        await NotesService.updateTimedNote(videoId, n.timestamp, n.text.trim());
+      }
     }
-
-    document.body.style.overflow = "auto";
-
-    // resume video 
-    const player = document.querySelector("video") as HTMLVideoElement | null;
-    if (player && settings.pause) {
-      player.play();
-    }
-
     document.getElementById("smarttube-overlay-container")?.remove();
   };
 

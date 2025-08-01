@@ -22,7 +22,7 @@ const SettingsService = {
     }
   },
 
-  update<K extends keyof Settings>(key: K, value: Settings[K]) {
+  update(key: string, value: boolean) {
     const current = SettingsService.get();
     const updated = { ...current, [key]: value };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
