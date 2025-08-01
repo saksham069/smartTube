@@ -31,21 +31,21 @@ const App = () => {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
     const videoId = NotesService.getVideoId();
     if (!videoId) {
       alert("No video ID found. Make sure you're on a YouTube video page.");
       return;
     }
-    
-    const allNotes = await NotesService.getAll();
+
+    const allNotes = NotesService.getAll();
     const currentVideoNotes = allNotes[videoId];
-    
+
     if (!currentVideoNotes) {
       alert("No notes found for this video.");
       return;
     }
-    
+
     const singleVideoData = { [videoId]: currentVideoNotes };
     const blob = new Blob([JSON.stringify(singleVideoData, null, 2)], {
       type: "application/json",
@@ -61,18 +61,18 @@ const App = () => {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const text = await file.text();
     try {
       const data = JSON.parse(text);
       const videoIds = Object.keys(data);
-      
+
       if (videoIds.length !== 1) {
         alert("Invalid file format. File should contain notes for exactly one video.");
         return;
       }
-      
-      await NotesService.importAll(data);
+
+      NotesService.importAll(data);
       alert("Notes imported!");
     } catch {
       alert("Invalid JSON file.");

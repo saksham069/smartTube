@@ -12,84 +12,44 @@ export interface ISmartTubeNotes {
 
 const STORAGE_KEY = "smarttube-notes";
 
-// Helper to determine if we're in popup context
-const isPopupContext = () => {
-  return typeof chrome !== 'undefined' && chrome.storage;
-};
-
-// Storage wrapper that works in both popup and content script contexts
-const StorageWrapper = {
-  async get(key: string): Promise<any> {
-    if (isPopupContext()) {
-      return new Promise((resolve) => {
-        chrome.storage.local.get([key], (result) => {
-          resolve(result[key]);
-        });
-      });
-    } else {
-      try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : null;
-      } catch {
-        return null;
-      }
-    }
-  },
-
-  async set(key: string, value: any): Promise<void> {
-    if (isPopupContext()) {
-      return new Promise((resolve) => {
-        chrome.storage.local.set({ [key]: value }, resolve);
-      });
-    } else {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch (e) {
-        console.error('Failed to save to localStorage:', e);
-      }
-    }
-  }
-};
-
 const NotesService = {
-  async getAll(): Promise<ISmartTubeNotes> {
+  getAll(): ISmartTubeNotes {
     try {
-      const raw = await StorageWrapper.get(STORAGE_KEY);
-      return raw || {};
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
     } catch {
       return {};
     }
   },
 
-  async saveAll(notes: ISmartTubeNotes) {
-    await StorageWrapper.set(STORAGE_KEY, notes);
+  saveAll(notes: ISmartTubeNotes) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   },
 
   getVideoId(): string | null {
     return new URLSearchParams(window.location.search).get("v");
   },
 
-  async getUntimed(videoId: string): Promise<string> {
-    const all = await this.getAll();
-    return all[videoId]?.untimed || "";
+  getUntimed(videoId: string): string {
+    return this.getAll()[videoId]?.untimed || "";
   },
 
-  async saveUntimed(videoId: string, content: string) {
-    const all = await this.getAll();
+  saveUntimed(videoId: string, content: string) {
+    const all = this.getAll();
     all[videoId] ??= { untimed: "", timed: [] };
     all[videoId].untimed = content;
-    await this.saveAll(all);
+    this.saveAll(all);
   },
 
-  async addTimedNote(videoId: string, note: ITimedNote) {
-    const all = await this.getAll();
+  addTimedNote(videoId: string, note: ITimedNote) {
+    const all = this.getAll();
     all[videoId] ??= { untimed: "", timed: [] };
     all[videoId].timed.push(note);
-    await this.saveAll(all);
+    this.saveAll(all);
   },
 
-  async updateTimedNote(videoId: string, timestamp: number, newText: string) {
-    const all = await this.getAll();
+  updateTimedNote(videoId: string, timestamp: number, newText: string) {
+    const all = this.getAll();
     all[videoId] ??= { untimed: "", timed: [] };
 
     const index = all[videoId].timed.findIndex(
@@ -107,73 +67,20 @@ const NotesService = {
       }
     }
 
-    await this.saveAll(all);
+    this.saveAll(all);
   },
 
-  async importAll(data: Record<string, { untimed: string; timed: ITimedNote[] }>) {
+  importAll(data: Record<string, { untimed: string; timed: ITimedNote[] }>) {
     try {
-      const current = await this.getAll();
       Object.keys(data).forEach((videoId) => {
+        const current = NotesService.getAll();
         current[videoId] = data[videoId];
+        localStorage.setItem("smarttube-notes", JSON.stringify(current));
       });
-      await this.saveAll(current);
     } catch (e) {
       console.error("Import failed", e);
     }
   },
 };
 
-const SETTINGS_KEY = "smarttube-settings";
-
-type Settings = {
-  theme: boolean;
-  blur: boolean;
-  pause: boolean;
-};
-
-const defaultSettings: Settings = {
-  theme: false,
-  blur: false,
-  pause: false,
-};
-
-const SettingsService = {
-  async initDefaults() {
-    const raw = await StorageWrapper.get(SETTINGS_KEY);
-    if (!raw) {
-      await StorageWrapper.set(SETTINGS_KEY, defaultSettings);
-    }
-  },
-
-  async get(): Promise<Settings> {
-    const raw = await StorageWrapper.get(SETTINGS_KEY);
-    if (raw) {
-      try {
-        return raw;
-      } catch {
-        return defaultSettings;
-      }
-    }
-    return defaultSettings;
-  },
-
-  async set(newSettings: Settings) {
-    await StorageWrapper.set(SETTINGS_KEY, newSettings);
-    // Dispatch custom event for same-tab synchronization
-    window.dispatchEvent(new CustomEvent('smarttube-settings-changed', { 
-      detail: newSettings 
-    }));
-  },
-
-  async update<K extends keyof Settings>(key: K, value: boolean) {
-    const current = await this.get();
-    current[key] = value;
-    await this.set(current);
-    console.log(current);
-  },
-};
-
-export default {
-  ...NotesService,
-  settings: SettingsService,
-};
+export default NotesService;
