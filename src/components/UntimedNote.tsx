@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import SettingsService from "../lib/settingsService";
+
 
 type Props = {
   note: string;
@@ -8,6 +10,19 @@ type Props = {
 
 const UntimedNote = ({ note, setNote, autoResize }: Props) => {
   const ref = useRef<HTMLTextAreaElement>(null);
+
+  const [settings, setSettings] = useState(() => SettingsService.get());
+
+  useEffect(() => {
+    const onSettingsChange = (e: any) => {
+      const newSettings = e.detail;
+      setSettings(newSettings);
+    };
+
+    window.addEventListener("smarttube-settings-changed", onSettingsChange);
+    return () =>
+      window.removeEventListener("smarttube-settings-changed", onSettingsChange);
+  }, []);
 
   useEffect(() => {
     if (ref.current) {
@@ -28,7 +43,7 @@ const UntimedNote = ({ note, setNote, autoResize }: Props) => {
         autoResize(e.target);
       }}
       placeholder="General notes for this video..."
-      className="w-full text-xl font-normal leading-relaxed text-zinc-800 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-300 dark:border-zinc-700 rounded-xl px-6 py-5 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow"
+      className={`w-full text-xl font-normal leading-relaxed ${settings.theme ? "text-zinc-100 bg-zinc-800/90 border-zinc-700" : "text-zinc-800 bg-zinc-100 border-zinc-300"}  border rounded-xl px-6 py-5 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all shadow`}
     />
   );
 };

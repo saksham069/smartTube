@@ -17,17 +17,9 @@ const Overlay = () => {
   };
 
   useEffect(() => {
-    const applyTheme = (theme: boolean) => {
-      document.documentElement.classList.remove("dark");
-      if (theme) document.documentElement.classList.add("dark");
-    };
-
-    applyTheme(settings.theme); // on mount
-
     const onSettingsChange = (e: any) => {
       const newSettings = e.detail;
       setSettings(newSettings);
-      applyTheme(newSettings.theme); // on change
     };
 
     window.addEventListener("smarttube-settings-changed", onSettingsChange);
@@ -75,7 +67,7 @@ const Overlay = () => {
   useEffect(() => {
     const escHandler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        document.getElementById("smarttube-overlay-container")?.remove();
+        if (document.getElementById("smarttube-overlay-container")) dismiss();
       }
     };
     window.addEventListener("keydown", escHandler);
@@ -159,11 +151,11 @@ const Overlay = () => {
     <>
       <div onClick={dismiss} style={backdropStyle} />
       <div
-        className="fixed top-[5%] left-[5%] w-[90%] h-[90%] z-[9999] bg-white dark:bg-zinc-900 text-black dark:text-zinc-200 rounded-xl border border-zinc-300 dark:border-zinc-700 shadow-2xl flex flex-col overflow-hidden text-[15px]"
+        className={`fixed top-[5%] left-[5%] w-[90%] h-[90%] z-[9999] ${settings.theme ? "bg-zinc-900 text-zinc-200 border-zinc-700" : "bg-white text-black border-zinc-300"} rounded-xl border shadow-2xl flex flex-col overflow-hidden text-[15px]`}
         id="smarttube-overlay"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-4 border-b border-zinc-300 dark:border-zinc-700 flex items-center justify-between">
+        <div className={`px-6 py-4 border-b ${settings.theme ? "border-zinc-700" : "border-zinc-300"} flex items-center justify-between`}>
           <h1 className="text-2xl font-bold">SmartTube Notes</h1>
         </div>
 

@@ -1,4 +1,5 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import SettingsService from "../lib/settingsService";
 
 type Props = {
   text: string;
@@ -21,6 +22,19 @@ const TimedNote = ({
 }: Props) => {
   const ref = useRef<HTMLTextAreaElement>(null);
 
+  const [settings, setSettings] = useState(() => SettingsService.get());
+
+  useEffect(() => {
+    const onSettingsChange = (e: any) => {
+      const newSettings = e.detail;
+      setSettings(newSettings);
+    };
+
+    window.addEventListener("smarttube-settings-changed", onSettingsChange);
+    return () =>
+      window.removeEventListener("smarttube-settings-changed", onSettingsChange);
+  }, []);
+
   useEffect(() => {
     if (ref.current) autoResize(ref.current);
   }, [text]);
@@ -36,13 +50,13 @@ const TimedNote = ({
   return (
     <div
       id={`note-${timestamp}`}
-      className="bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 rounded-xl p-6 shadow-md transition-all"
+      className={`${settings.theme ? "bg-zinc-800/80 border-zinc-700" : "bg-zinc-100 border-zinc-300"} border rounded-xl p-6 shadow-md transition-all`}
     >
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={handlePlay}
           title="Jump to timestamp"
-          className="text-blue-600 dark:text-blue-400 font-medium text-lg hover:underline"
+          className={`${settings.theme ? "text-blue-400" : "text-blue-600"} font-medium text-lg hover:underline`}
         >
           ▶ {formatTime(timestamp)}
         </button>
@@ -71,7 +85,7 @@ const TimedNote = ({
         value={text}
         placeholder="Add a timestamped note..."
         onChange={(e) => handleChange(idx, e.target.value)}
-        className="w-full text-lg font-normal leading-relaxed text-zinc-800 dark:text-zinc-100 bg-white dark:bg-zinc-900/90 border border-zinc-300 dark:border-zinc-700 rounded-lg px-5 py-4 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+        className={`w-full text-lg font-normal leading-relaxed ${settings.theme ? "text-zinc-100 bg-zinc-900/90 border-zinc-700" : "text-zinc-800 bg-white border-zinc-300"} border rounded-lg px-5 py-4 resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all`}
       />
     </div>
   );

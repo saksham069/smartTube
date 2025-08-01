@@ -3,12 +3,6 @@ import Overlay from "./components/Overlay";
 import SettingsService from "./lib/settingsService";
 import "../popup/index.css";
 
-const settings = SettingsService.get();
-document.documentElement.classList.remove("dark");
-if (settings.theme) {
-  document.documentElement.classList.add("dark");
-}
-
 // if gonna change svg, fix styling in index.css
 const iconSVG = `
   <svg viewBox="0 0 24 24" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">

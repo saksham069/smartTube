@@ -15,10 +15,6 @@ const App = () => {
     setDark(settings.theme);
     setBlurBg(settings.blur);
     setPauseVideo(settings.pause);
-    document.documentElement.classList.remove("dark");
-    if (settings.theme) {
-      document.documentElement.classList.add("dark");
-    }
   }, []);
 
   const handleSettingChange = (
@@ -27,10 +23,6 @@ const App = () => {
   ) => {
     SettingsService.update(key, value);
     if (key === "theme") {
-      document.documentElement.classList.remove("dark");
-      if (value) {
-        document.documentElement.classList.add("dark");
-      }
       setDark(value);
     } else if (key === "blur") {
       setBlurBg(value);
@@ -88,10 +80,9 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 space-y-6 w-80 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 font-inter">
+    <div className={`min-h-screen p-6 space-y-6 w-80 ${dark ? "bg-zinc-900 text-zinc-200" : "bg-white text-zinc-800"} font-inter`}>
       <h1 className="text-xl font-semibold">SmartTube Settings</h1>
-      <hr className="border-zinc-300 dark:border-zinc-700 -mt-1 mb-4" />
-
+      <hr className={` ${dark ? "border-zinc-700" : "border-zinc-300"} -mt-1 mb-4`} />
       <div className="space-y-4">
         <Toggle
           label="Blur background on overlay"
@@ -110,7 +101,7 @@ const App = () => {
         />
       </div>
 
-      <div className="pt-4 space-y-2 border-t border-zinc-300 dark:border-zinc-700">
+      <div className={`pt-4 space-y-2 border-t ${dark ? "border-zinc-700" : "border-zinc-300"}`}>
         <button
           onClick={handleExport}
           className="w-full px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded"
@@ -118,7 +109,7 @@ const App = () => {
           Export Notes
         </button>
 
-        <label className="block w-full text-center text-sm px-4 py-2 bg-zinc-100 dark:bg-zinc-700 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 cursor-pointer">
+        <label className={`block w-full text-center text-sm px-4 py-2 ${dark ? "bg-zinc-700" : "bg-zinc-100"} rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 cursor-pointer`}>
           Import Notes
           <input
             type="file"
