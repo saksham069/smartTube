@@ -23,7 +23,18 @@ const NotesService = {
   },
 
   saveAll(notes: ISmartTubeNotes) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+    const filteredNotes: ISmartTubeNotes = {};
+
+    for (const [videoId, noteData] of Object.entries(notes)) {
+      const hasTimed = noteData.timed.length > 0;
+      const hasUntimed = noteData.untimed.trim() !== "";
+
+      if (hasTimed || hasUntimed) {
+        filteredNotes[videoId] = noteData;
+      }
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredNotes));
   },
 
   getVideoId(): string | null {

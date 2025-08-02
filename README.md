@@ -10,9 +10,9 @@ SmartTube is a lightweight and fast Chrome extension that lets you take timestam
 
 - 📝 Take real-time notes while watching any YouTube video
 - ⏱️ Notes are automatically timestamped
-- 📁 Export/Import notes in Markdown format
+- 📁 Export/Import notes in JSON format
 - 🧠 (Coming soon) AI-powered video summarization
-- 🔗 Share notes with friends as `.md` files
+- 🔗 (Coming soon) Markdown support
 - 💾 All notes stored locally (offline support + privacy-friendly)
 
 ---

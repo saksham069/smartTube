@@ -1,14 +1,105 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import UntimedNote from "./UntimedNote";
 import TimedNoteBlock from "./TimedNote";
 import NotesService, { type ITimedNote } from "../lib/notesService";
 import SettingsService from "../lib/settingsService";
+import Toggle from "./Toggle";
 
 const Overlay = () => {
   const [note, setNote] = useState("");
   const [timedNotes, setTimedNotes] = useState<ITimedNote[]>([]);
   const [settings, setSettings] = useState(() => SettingsService.get());
+  const [dark, setDark] = useState(false);
+  const [blurBg, setBlurBg] = useState(false);
+  const [pauseVideo, setPauseVideo] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const videoId = NotesService.getVideoId();
+
+  // load settings from storage
+  useEffect(() => {
+    const settings = SettingsService.get();
+    setDark(settings.theme);
+    setBlurBg(settings.blur);
+    setPauseVideo(settings.pause);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+
+  const handleSettingChange = (
+    key: string,
+    value: boolean
+  ) => {
+    SettingsService.update(key, value);
+
+    if (key === "theme") {
+      setDark(value);
+    } else if (key === "blur") {
+      setBlurBg(value);
+    } else if (key === "pause") {
+      setPauseVideo(value);
+    }
+  };
+
+  const handleExport = () => {
+    const videoId = NotesService.getVideoId();
+    if (!videoId) {
+      alert("No video ID found. Make sure you're on a YouTube video page.");
+      return;
+    }
+
+    const allNotes = NotesService.getAll();
+    const currentVideoNotes = allNotes[videoId];
+
+    if (!currentVideoNotes) {
+      alert("No notes found for this video.");
+      return;
+    }
+
+    const singleVideoData = { [videoId]: currentVideoNotes };
+    const blob = new Blob([JSON.stringify(singleVideoData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `smarttube-notes-${videoId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const text = await file.text();
+    try {
+      const data = JSON.parse(text);
+      const videoIds = Object.keys(data);
+
+      if (videoIds.length !== 1) {
+        alert("Invalid file format. File should contain notes for exactly one video.");
+        return;
+      }
+
+      NotesService.importAll(data);
+      alert("Notes imported!");
+    } catch {
+      alert("Invalid JSON file.");
+    } finally {
+      dismiss();
+    }
+  };
 
   const autoResize = (el: HTMLTextAreaElement | null) => {
     if (!el) return;
@@ -155,8 +246,77 @@ const Overlay = () => {
         id="smarttube-overlay"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`px-6 py-4 border-b ${settings.theme ? "border-zinc-700" : "border-zinc-300"} flex items-center justify-between`}>
-          <h1 className="text-2xl font-bold">SmartTube Notes</h1>
+        <div
+          className={`px-6 py-4 border-b ${settings.theme ? "border-zinc-700" : "border-zinc-300"
+            } flex items-center justify-between relative`}
+        >
+          <h1 className="text-4xl font-bold">SmartTube Notes</h1>
+
+          <div className="relative" ref={settingsRef}>
+            <button
+              onClick={() => setShowSettings((prev) => !prev)}
+              className="p-2 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
+              title="Settings"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-8 h-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+
+            {showSettings && (
+              <div
+                className={`absolute right-0 mt-2 w-96 rounded-xl shadow-lg z-50 transition-all duration-300 ease-out
+          ${dark ? "bg-zinc-800 text-white border border-zinc-700" : "bg-white text-black border border-zinc-200"}`}
+              >
+                <div className="p-6 space-y-6 text-xl">
+                  <Toggle
+                    label="Blur background"
+                    checked={blurBg}
+                    onChange={(val) => handleSettingChange("blur", val)}
+                  />
+                  <Toggle
+                    label="Pause video"
+                    checked={pauseVideo}
+                    onChange={(val) => handleSettingChange("pause", val)}
+                  />
+                  <Toggle
+                    label="Dark mode"
+                    checked={dark}
+                    onChange={(val) => handleSettingChange("theme", val)}
+                  />
+                  <div className={`pt-4 space-y-2 border-t border-zinc-700`}>
+                    <button
+                      onClick={handleExport}
+                      className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
+                    >
+                      Export Notes
+                    </button>
+
+                    <label className={`block w-full text-center px-4 py-2 bg-zinc-700 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 cursor-pointer`}>
+                      Import Notes
+                      <input
+                        type="file"
+                        accept="application/json"
+                        hidden
+                        onChange={handleImport}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
